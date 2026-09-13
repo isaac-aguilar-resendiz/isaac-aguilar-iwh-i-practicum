@@ -1,4 +1,14 @@
-.DS_Store
-node_modules
-package-lock.json
+# Dependencies
+node_modules/
+
+# Environment variables - never commit the private app token
 .env
+
+# Editor and OS files
+.idea/
+.vscode/
+.DS_Store
+
+# Logs
+npm-debug.log*
+*.log
