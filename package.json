@@ -1,16 +1,19 @@
 {
-    "name": "integrating-with-hubspot-i-foundations-practicum",
-    "version": "1.0.0",
-    "description": "",
-    "main": "index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "HubSpot Academy learner",
-    "license": "ISC",
-    "dependencies": {
-        "axios": "^1.3.5",
-        "express": "^4.18.2",
-        "pug": "^3.0.2"
-    }
+  "name": "isaac-aguilar-iwh-i-practicum",
+  "version": "1.0.0",
+  "description": "Integrating With HubSpot I: Foundations practicum - Express app that reads and writes NFL Team custom object records through the HubSpot CRM API.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "setup:object": "node scripts/create-object.js",
+    "setup:records": "node scripts/seed-records.js"
+  },
+  "author": "Isaac Aguilar",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "pug": "^3.0.3"
+  }
 }
