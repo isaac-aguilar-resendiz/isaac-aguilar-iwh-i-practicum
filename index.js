@@ -1,71 +1,139 @@
+// -----------------------------------------------------------------------------
+// Integrating With HubSpot I: Foundations - Practicum
+//
+// Express app that reads and writes records of the "NFL Team" custom object
+// through the HubSpot CRM API.
+// -----------------------------------------------------------------------------
+
 const express = require('express');
 const axios = require('axios');
+require('dotenv').config();
+
+// --- Environment -------------------------------------------------------------
+const PRIVATE_APP_TOKEN = process.env.PRIVATE_APP_TOKEN;
+const OBJECT_TYPE_ID = process.env.OBJECT_TYPE_ID;
+const PORT = process.env.PORT || 3000;
+
+if (!PRIVATE_APP_TOKEN || !OBJECT_TYPE_ID) {
+    console.error('Missing PRIVATE_APP_TOKEN or OBJECT_TYPE_ID. Copy .env.example to .env first.');
+    process.exit(1);
+}
+
+// Custom properties handled by the app, in the order they appear on screen.
+const TEAM_PROPERTIES = ['name', 'conference', 'home_stadium', 'founded_year', 'super_bowl_wins'];
+
+// --- HubSpot client ----------------------------------------------------------
+// A single pre-configured axios instance keeps the base URL and the auth header
+// in one place instead of repeating them on every call.
+const hubspot = axios.create({
+    baseURL: 'https://api.hubapi.com',
+    headers: {
+        Authorization: `Bearer ${PRIVATE_APP_TOKEN}`,
+        'Content-Type': 'application/json',
+    },
+});
+
+// Every request in this app targets the same custom object endpoint.
+const OBJECT_ENDPOINT = `/crm/v3/objects/${OBJECT_TYPE_ID}`;
+
+/**
+ * Retrieves every NFL Team record with all of its custom properties.
+ */
+async function getTeams() {
+    const { data } = await hubspot.get(OBJECT_ENDPOINT, {
+        params: {
+            limit: 100,
+            properties: TEAM_PROPERTIES.join(','),
+        },
+    });
+
+    return data.results;
+}
+
+/**
+ * Creates a single NFL Team record from the submitted form data.
+ * Empty fields are dropped so HubSpot does not receive blank values, and the
+ * two numeric properties are converted from strings before being sent.
+ */
+async function createTeam(formData) {
+    const properties = {};
+
+    TEAM_PROPERTIES.forEach((property) => {
+        const value = formData[property];
+
+        if (value === undefined || value === '') {
+            return;
+        }
+
+        const isNumeric = property === 'founded_year' || property === 'super_bowl_wins';
+        properties[property] = isNumeric ? Number(value) : value;
+    });
+
+    const { data } = await hubspot.post(OBJECT_ENDPOINT, { properties });
+
+    return data;
+}
+
+/**
+ * Logs the useful part of an axios error and answers with a readable message.
+ */
+function handleError(res, error, message) {
+    console.error(message, error.response ? error.response.data : error.message);
+    res.status(500).render('error', { title: 'Something went wrong', message });
+}
+
+// --- App configuration -------------------------------------------------------
 const app = express();
 
+// Both paths are anchored to this file so the app also runs when node is
+// started from a different working directory.
 app.set('view engine', 'pug');
-app.use(express.static(__dirname + '/public'));
+app.set('views', `${__dirname}/views`);
+app.use(express.static(`${__dirname}/public`));
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
-// * Please DO NOT INCLUDE the private app access token in your repo. Don't do this practicum in your normal account.
-const PRIVATE_APP_ACCESS = '';
-
-// TODO: ROUTE 1 - Create a new app.get route for the homepage to call your custom object data. Pass this data along to the front-end and create a new pug template in the views folder.
-
-// * Code for Route 1 goes here
-
-// TODO: ROUTE 2 - Create a new app.get route for the form to create or update new custom object data. Send this data along in the next route.
-
-// * Code for Route 2 goes here
-
-// TODO: ROUTE 3 - Create a new app.post route for the custom objects form to create or update your custom object data. Once executed, redirect the user to the homepage.
-
-// * Code for Route 3 goes here
-
-/** 
-* * This is sample code to give you a reference for how you should structure your calls. 
-
-* * App.get sample
-app.get('/contacts', async (req, res) => {
-    const contacts = 'https://api.hubspot.com/crm/v3/objects/contacts';
-    const headers = {
-        Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
-        'Content-Type': 'application/json'
-    }
+// -----------------------------------------------------------------------------
+// GET "/" - Homepage
+// Reads every custom object record and renders them as an HTML table.
+// -----------------------------------------------------------------------------
+app.get('/', async (req, res) => {
     try {
-        const resp = await axios.get(contacts, { headers });
-        const data = resp.data.results;
-        res.render('contacts', { title: 'Contacts | HubSpot APIs', data });      
+        const teams = await getTeams();
+
+        res.render('homepage', {
+            title: 'NFL Teams | Integrating With HubSpot I Practicum',
+            teams,
+        });
     } catch (error) {
-        console.error(error);
+        handleError(res, error, 'Could not retrieve the NFL Team records from HubSpot.');
     }
 });
 
-* * App.post sample
-app.post('/update', async (req, res) => {
-    const update = {
-        properties: {
-            "favorite_book": req.body.newVal
-        }
-    }
-
-    const email = req.query.email;
-    const updateContact = `https://api.hubapi.com/crm/v3/objects/contacts/${email}?idProperty=email`;
-    const headers = {
-        Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
-        'Content-Type': 'application/json'
-    };
-
-    try { 
-        await axios.patch(updateContact, update, { headers } );
-        res.redirect('back');
-    } catch(err) {
-        console.error(err);
-    }
-
+// -----------------------------------------------------------------------------
+// GET "/update-cobj" - Form
+// Renders the template that holds the HTML form used to create a new record.
+// -----------------------------------------------------------------------------
+app.get('/update-cobj', (req, res) => {
+    res.render('updates', {
+        title: 'Update Custom Object Form | Integrating With HubSpot I Practicum',
+    });
 });
-*/
 
+// -----------------------------------------------------------------------------
+// POST "/update-cobj" - Create
+// Sends the form data to HubSpot and redirects back to the homepage so the new
+// record shows up in the table.
+// -----------------------------------------------------------------------------
+app.post('/update-cobj', async (req, res) => {
+    try {
+        await createTeam(req.body);
+        res.redirect('/');
+    } catch (error) {
+        handleError(res, error, 'Could not create the NFL Team record in HubSpot.');
+    }
+});
 
-// * Localhost
-app.listen(3000, () => console.log('Listening on http://localhost:3000'));
+// --- Server ------------------------------------------------------------------
+app.listen(PORT, () => {
+    console.log(`App running at http://localhost:${PORT}`);
+});
