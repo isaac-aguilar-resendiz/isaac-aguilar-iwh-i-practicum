@@ -6,10 +6,7 @@ Pug templates.
 
 ## Custom object list view
 
-> **TODO:** replace `<test-account-id>` and `<custom-object-id>` with the real
-> values from your test account before submitting.
-
-https://app.hubspot.com/contacts/&lt;test-account-id&gt;/objects/&lt;custom-object-id&gt;/views/all/list
+https://app.hubspot.com/contacts/52021802/objects/2-69179296/views/all/list
 
 ## The custom object
 
@@ -72,14 +69,19 @@ The object is associated with the standard **Contacts** object type.
 
    > `.env` is git-ignored. The access token must never be committed.
 
-4. Create the custom object and its properties. The script prints the
-   `objectTypeId` it generated — add it to `.env` as `OBJECT_TYPE_ID`:
+4. Add the `objectTypeId` of the custom object to `.env` as `OBJECT_TYPE_ID`.
+   You can read it from the URL of the object's list view in HubSpot.
+
+   The **NFL Team** custom object used here was created through the HubSpot UI,
+   along with its properties and the association to Contacts. To recreate it
+   from scratch in a different account, `scripts/create-object.js` does the same
+   thing through the CRM schemas API and prints the generated `objectTypeId`:
 
    ```bash
    npm run setup:object
    ```
 
-5. Load the three starter records:
+5. Load the starter records:
 
    ```bash
    npm run setup:records
