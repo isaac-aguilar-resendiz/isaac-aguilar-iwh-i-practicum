@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  header.page-header
+    div
+      h1 NFL Teams
+      p.subtitle Custom object records pulled live from the HubSpot CRM API.
+    a.btn.btn-primary(href="/update-cobj") Add to this table
+
+  if teams && teams.length
+    .table-wrap
+      table.data-table
+        thead
+          tr
+            th Name
+            th Conference
+            th Home Stadium
+            th.num Founded
+            th.num Super Bowl Wins
+        tbody
+          each team in teams
+            - const props = team.properties
+            tr
+              td.strong= props.name
+              td
+                if props.conference
+                  span.badge(class="badge-" + props.conference.toLowerCase())= props.conference
+                else
+                  span.muted &mdash;
+              td= props.home_stadium || '—'
+              td.num= props.founded_year || '—'
+              td.num= props.super_bowl_wins || '0'
+  else
+    .empty
+      p No NFL Team records yet.
+      a.btn.btn-primary(href="/update-cobj") Create the first one

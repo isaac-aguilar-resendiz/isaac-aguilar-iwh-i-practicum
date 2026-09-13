@@ -1,0 +1,36 @@
+extends layout
+
+block content
+  header.page-header
+    div
+      h1 Add an NFL Team
+      p.subtitle Creates a new custom object record in HubSpot.
+
+  a.back-link(href="/") &larr; Return to the homepage
+
+  form.form(method="POST" action="/update-cobj")
+    .field
+      label(for="name") Name
+      input#name(type="text" name="name" placeholder="Dallas Cowboys" required)
+
+    .field
+      label(for="conference") Conference
+      select#conference(name="conference")
+        option(value="") Select a conference
+        option(value="AFC") AFC
+        option(value="NFC") NFC
+
+    .field
+      label(for="home_stadium") Home Stadium
+      input#home_stadium(type="text" name="home_stadium" placeholder="AT&T Stadium")
+
+    .field-row
+      .field
+        label(for="founded_year") Founded Year
+        input#founded_year(type="number" name="founded_year" min="1900" max="2100" placeholder="1960")
+
+      .field
+        label(for="super_bowl_wins") Super Bowl Wins
+        input#super_bowl_wins(type="number" name="super_bowl_wins" min="0" placeholder="5")
+
+    button.btn.btn-primary(type="submit") Create record
